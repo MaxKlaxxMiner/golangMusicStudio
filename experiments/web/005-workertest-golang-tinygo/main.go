@@ -6,7 +6,7 @@ import (
 	"syscall/js"
 )
 
-func calcas(this js.Value, args []js.Value) any {
+func calc(this js.Value, args []js.Value) any {
 	sum := uint32(0)
 	for i := uint32(0); i < 1000000000; i++ {
 		sum += i
@@ -19,7 +19,7 @@ func main() {
 	fmt.Println("wasm: Hello World!")
 
 	wg := js.Global().Get("window").Get("wg")
-	wg.Set("calc", js.FuncOf(calcas))
+	wg.Set("calc", js.FuncOf(calc))
 
 	<-make(chan bool, 0)
 }
