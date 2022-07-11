@@ -19,8 +19,9 @@ let workletReady = false
 
 const initWorklet = async function () {
     audioContext = new AudioContext();
+    await audioContext.resume();
     await audioContext.audioWorklet.addModule("worklet-random.js")
-    const randomNoiseNode = new AudioWorkletNode(audioContext, "worklet-random")
+    const randomNoiseNode = new AudioWorkletNode(audioContext, "worklet-random", {outputChannelCount: [2]});
     randomNoiseNode.connect(audioContext.destination)
 }
 
