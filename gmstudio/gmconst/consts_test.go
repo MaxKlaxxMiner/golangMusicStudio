@@ -11,11 +11,11 @@ func TestConsts(t *testing.T) {
 		t.Errorf("DynamicBits out of range")
 	}
 
-	if AaBitsLQ < 1 || AaBitsLQ+SampleBits >= 64 {
-		t.Errorf("AaBitsLQ out of range")
+	if AaBitsMQ < 1 || AaBitsMQ+SampleBits >= 64 {
+		t.Errorf("AaBitsMQ out of range")
 	}
 
-	if AaBitsHQ < AaBitsLQ || AaBitsHQ+SampleBits >= 64 {
+	if AaBitsHQ < AaBitsMQ || AaBitsHQ+SampleBits >= 64 {
 		t.Errorf("AaBitsLQ out of range")
 	}
 }
