@@ -22,4 +22,20 @@ func TestConsts(t *testing.T) {
 	if AaBitsHQ < AaBitsMQ || AaBitsHQ+SampleBits >= 64 {
 		t.Errorf("AaBitsLQ out of range")
 	}
+
+	if Volume100 < 255 {
+		t.Errorf("invalid Volume100: %d", Volume100)
+	}
+
+	if Volume100 != 1<<(DynamicBits-1) {
+		t.Errorf("invalid Volume100 (is %d, expected: %d)", Volume100, 1<<(DynamicBits-1))
+	}
+
+	if VolumeLimit < Volume100 {
+		t.Errorf("VolumeLimit is lower than Volume100")
+	}
+
+	if uint64(VolumeLimit) > 1<<(SampleBits-1)-1 {
+		t.Errorf("VolumeLimit out of range")
+	}
 }

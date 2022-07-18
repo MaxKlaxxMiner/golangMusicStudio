@@ -93,15 +93,15 @@ var squareSamplesHQC9 = []float32{
 }
 
 func TestSquareLQ(t *testing.T) {
-	SamplerCompare(t, "SquareLQ A2", squareSamplesLQA2, SquareLQ, "A2")
-	SamplerCompare(t, "SquareLQ C4", squareSamplesLQC4, SquareLQ, "C4")
-	SamplerCompare(t, "SquareLQ C6", squareSamplesLQC6, SquareLQ, "C6")
-	SamplerCompare(t, "SquareLQ C9", squareSamplesLQC9, SquareLQ, "C9")
+	SamplerCompareTone(t, "SquareLQ A2", squareSamplesLQA2, SquareLQ, "A2")
+	SamplerCompareTone(t, "SquareLQ C4", squareSamplesLQC4, SquareLQ, "C4")
+	SamplerCompareTone(t, "SquareLQ C6", squareSamplesLQC6, SquareLQ, "C6")
+	SamplerCompareTone(t, "SquareLQ C9", squareSamplesLQC9, SquareLQ, "C9")
 }
 
 func TestSquareHQ(t *testing.T) {
-	SamplerCompare(t, "SquareHQ A2", squareSamplesHQA2, SquareHQ, "A2")
-	SamplerCompare(t, "SquareHQ C4", squareSamplesHQC4, SquareHQ, "C4")
-	SamplerCompare(t, "SquareHQ C6", squareSamplesHQC6, SquareHQ, "C6")
-	SamplerCompare(t, "SquareHQ C9", squareSamplesHQC9, SquareHQ, "C9")
+	SamplerCompareTone(t, "SquareHQ A2", squareSamplesHQA2, SquareHQ, "A2")
+	SamplerCompareTone(t, "SquareHQ C4", squareSamplesHQC4, SquareHQ, "C4")
+	SamplerCompareTone(t, "SquareHQ C6", squareSamplesHQC6, SquareHQ, "C6")
+	SamplerCompareTone(t, "SquareHQ C9", squareSamplesHQC9, SquareHQ, "C9")
 }

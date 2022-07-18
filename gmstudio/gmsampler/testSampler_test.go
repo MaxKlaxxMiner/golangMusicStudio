@@ -8,7 +8,7 @@ import (
 
 const SamplerTolerance = 0.001
 
-func SamplerCompare(t *testing.T, samplerName string, compareValues []float32, sampler func(buf []int32, incr, ofs uint32) uint32, samplerTone string) {
+func SamplerCompareTone(t *testing.T, samplerName string, compareValues []float32, sampler func(buf []int32, incr, ofs uint32) uint32, samplerTone string) {
 	tone := 0.0
 	switch samplerTone {
 	case "A2":
@@ -25,6 +25,27 @@ func SamplerCompare(t *testing.T, samplerName string, compareValues []float32, s
 
 	samplePeriode := gmconst.SampleRate / tone // samples per periode
 	sampleIncrement := uint32(4294967296.0/samplePeriode + 0.5)
+	buf := make([]int32, (len(compareValues)+127)/128*128)
+	ofs := uint32(0)
+	for i := 0; i < len(buf); i += 128 {
+		ofs = sampler(buf[i:i+128], sampleIncrement, ofs)
+	}
+	for i := 0; i < len(compareValues); i++ {
+		sampleInt := buf[i]
+		sampleFloat := float32(sampleInt) / float32(1<<(gmconst.DynamicBits-1))
+		compareFloat := compareValues[i]
+		compareMin := compareFloat - SamplerTolerance
+		compareMax := compareFloat + SamplerTolerance
+		if sampleFloat < compareMin || sampleFloat > compareMax {
+			t.Errorf("%s - sample error tone %.2f hz at pos %d: %.8f (%d) not between %.8f and %.8f", samplerName, tone, i, sampleFloat, sampleInt, compareMin, compareMax)
+			break
+		}
+	}
+}
+
+func SamplerCompareIncr(t *testing.T, samplerName string, compareValues []float32, sampler func(buf []int32, incr, ofs uint32) uint32, sampleIncrement uint32) {
+	tone := float64(sampleIncrement) / float64(1<<gmconst.SampleBits) * gmconst.SampleRate
+
 	buf := make([]int32, (len(compareValues)+127)/128*128)
 	ofs := uint32(0)
 	for i := 0; i < len(buf); i += 128 {
