@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dummy</title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            background: #111;
+            color: #eee;
+            font-family: Consolas;
+        }
+
+        div {
+            padding: 55px;
+        }
+
+        h1 > span {
+            color: #0080ff;
+        }
+
+        button {
+            width: 240px;
+            height: 80px;
+            background: #888;
+        }
+
+        button:hover {
+            background: #ccc;
+            cursor: pointer;
+        }
+
+        table {
+            margin-bottom: 16px;
+        }
+
+        tr {
+        }
+
+        td {
+            padding: 5px;
+        }
+
+        td:nth-last-child(1) {
+            color: #f80
+        }
+
+        td.ok:nth-last-child(1) {
+            color: #0f0
+        }
+
+        td.info:nth-last-child(1) {
+            color: #ff0
+        }
+
+        td.error:nth-last-child(1) {
+            color: #f00
+        }
+
+    </style>
+    <script src="wasm_exec.js"></script>
+    <script src="main.js"></script>
+</head>
+<body>
+<div>
+    <h1>014-webaudio-fulltest <span>^_^</span></h1>
+    <table>
+        <tr>
+            <td>main.js</td>
+            <td id="status_main.js">n/a</td>
+        </tr>
+        <tr>
+            <td>main.go</td>
+            <td id="status_main.go">n/a</td>
+        </tr>
+        <tr>
+            <td>audioContext</td>
+            <td id="status_audioContext">n/a</td>
+        </tr>
+        <tr>
+            <td>audioWorklet</td>
+            <td id="status_worklet">n/a</td>
+        </tr>
+    </table>
+    <button onmousedown="toneWorkletJs(true)" onmouseup="toneWorkletJs(false)">tone worklet.js</button>
+</div>
+</body>
+</html>
