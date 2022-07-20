@@ -21,8 +21,8 @@
         }
 
         button {
-            width: 240px;
-            height: 80px;
+            width: 144px;
+            height: 55px;
             background: #888;
         }
 
@@ -82,8 +82,13 @@
             <td>audioWorklet</td>
             <td id="status_worklet">n/a</td>
         </tr>
+        <tr>
+            <td>worklet.go</td>
+            <td id="status_workletGo">n/a</td>
+        </tr>
     </table>
-    <button onmousedown="toneWorkletJs(true)" onmouseup="toneWorkletJs(false)">tone worklet.js</button>
+    <button onmousedown="toneWorkletJs(true)" onmouseup="toneWorkletJs(false)">worklet.js</button>
+    <button onmousedown="toneWorkletGo(true)" onmouseup="toneWorkletGo(false)">worklet.go</button>
 </div>
 </body>
 </html>

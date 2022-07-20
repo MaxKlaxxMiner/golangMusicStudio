@@ -16,6 +16,11 @@ window.wg = {
     workletBlockCount16: 0,
     workletReady: false,
     workletMessageTodo: [],
+
+    workletGoInit: false,
+    workletGoError: "",
+    workletGoWasm: null,
+    workletGoReady: false,
 }
 
 const version = Date.now();
@@ -61,7 +66,6 @@ function initMainGo() {
             wg.mainGoError = loadWasm + " - " + r.toString();
         });
     } catch (e) {
-        console.log("skip");
         wg.mainGoError = e.toString()
     }
 }
@@ -102,25 +106,28 @@ function initAudio() {
     const workletUrl = "worklet.js?" + version;
     wg.audioContext.audioWorklet.addModule(workletUrl).then(r => {
         wg.workletNode = new AudioWorkletNode(wg.audioContext, "worklet", {outputChannelCount: [2]});
-        wg.workletNode.port.onmessage = (msg) => {
-            switch (msg.data) {
-                case "ok: start": {
-                    wg.workletStarted = true;
-                    break;
-                }
-                case "ok: block16": {
-                    wg.workletBlockCount16++;
-                    wg.workletReady = true;
-                    workletSendMessage(null);
-                    break;
-                }
-            }
-        }
+        wg.workletNode.port.onmessage = workletReceiveMessage;
         wg.workletNode.connect(wg.audioContext.destination);
         wg.workletLoaded = true;
     }).catch(r => {
         wg.workletError = workletUrl + " - " + r.toString();
     })
+}
+
+function initWorkletGo() {
+    wg.workletGoInit = true;
+
+    const loadWasm = "worklet.wasm?" + version;
+    fetch(loadWasm).then(r => r.arrayBuffer().then(buffer => {
+        if (r.status !== 200) {
+            wg.workletGoError = loadWasm + " - " + r.statusText;
+        }
+        wg.workletGoWasm = new Uint8Array(buffer);
+
+        workletSendMessage({t: "goWasm", val: wg.workletGoWasm})
+    }).catch(r => {
+        wg.workletGoError = loadWasm + " - " + r.toString();
+    }));
 }
 
 function workletSendMessage(msg) {
@@ -137,10 +144,32 @@ function workletSendMessage(msg) {
     if (msg != null) wg.workletNode.port.postMessage(msg);
 }
 
+function workletReceiveMessage(msg) {
+    switch (msg.data) {
+        case "ok: start": {
+            wg.workletStarted = true;
+            break;
+        }
+        case "ok: block16": {
+            wg.workletBlockCount16++;
+            wg.workletReady = true;
+            workletSendMessage(null);
+            break;
+        }
+        case "ok: goWasmReady": {
+            wg.workletGoReady = true;
+            break;
+        }
+    }
+}
+
 function toneWorkletJs(active) {
     workletSendMessage({t: "tone", val: active});
 }
 
+function toneWorkletGo(active) {
+    workletSendMessage({t: "toneGo", val: active});
+}
 
 function updateTab(id, status, value) {
     const el = document.getElementById(id)
@@ -220,12 +249,48 @@ function updateTabAudioWorklet() {
     updateTab("status_worklet", "ok", "ok. (running " + (wg.workletBlockCount16 * 16 * 128 / 44100).toFixed(1) + "s = " + wg.workletBlockCount16 + ")");
 }
 
+function updateTabWorkletGo() {
+    let exInfo = "";
+    if (wg.workletGoWasm != null) {
+        exInfo = " (wasm: " + (wg.workletGoWasm.length / 1024.0).toFixed(2) + " kByte loaded)";
+    }
+
+    if (wg.workletGoError) {
+        updateTab("status_workletGo", "error", "error: " + wg.workletGoError);
+        return;
+    }
+
+    if (!wg.workletGoInit) {
+        updateTab("status_workletGo", "", "not initialized");
+        return;
+    }
+
+    if (!wg.workletInit) {
+        updateTab("status_workletGo", "info", "wait for audioWorklet" + exInfo);
+        return;
+    }
+
+    if (wg.workletGoWasm == null) {
+        updateTab("status_workletGo", "", "load wasm...");
+        return;
+    }
+
+    if (wg.workletGoReady) {
+        updateTab("status_workletGo", "ok", "ok." + exInfo);
+    } else {
+        updateTab("status_workletGo", "", "not ready..." + exInfo);
+    }
+
+}
+
 setInterval(() => {
     updateTab("status_main.js", "ok", "ok.");
     updateTabMainGo();
     updateTabAudioContext();
     updateTabAudioWorklet();
+    updateTabWorkletGo();
 }, 10);
 
 initUserEvents();
 initMainGo();
+initWorkletGo();

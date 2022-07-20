@@ -698,10 +698,12 @@ console.log("worklet: init go wasm");
     }
 })();
 
-
 globalThis.wg = {
     fillBuffer: null,
     bufCounter: 0,
+    workletPort: null,
+    workletGoReady: false,
+    workletGoFillBuffer: null,
 };
 
 let go = null;
@@ -711,7 +713,7 @@ console.log("worklet: start processor");
 function recMessage(event) {
     console.log("data:", event.data);
     switch (event.data.t) {
-        case "wasm": {
+        case "goWasm": {
             go = new Go();
             const module = new WebAssembly.Module(event.data.val);
             const instance = new WebAssembly.Instance(module, go.importObject);
@@ -731,6 +733,19 @@ function recMessage(event) {
             } else {
                 wg.fillBuffer = null;
             }
+            break;
+        }
+        case "toneGo": {
+            if (event.data.val) {
+                wg.fillBuffer = output => {
+                    const bufferLeft = new Uint8Array(output[0].buffer);
+                    const bufferRight = new Uint8Array(output[1].buffer);
+                    wg.workletGoFillBuffer(bufferLeft, bufferRight);
+                };
+            } else {
+                wg.fillBuffer = null;
+            }
+            break;
         }
     }
 }
@@ -740,7 +755,8 @@ class RandomNoiseProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         this.port.onmessage = recMessage;
-        this.port.postMessage("ok: start");
+        wg.workletPort = this.port;
+        wg.workletPort.postMessage("ok: start");
     }
 
     process(inputs, outputs, parameters) {
@@ -748,7 +764,7 @@ class RandomNoiseProcessor extends AudioWorkletProcessor {
         wg.bufCounter++;
         if (wg.bufCounter >= 16) {
             wg.bufCounter -= 16;
-            this.port.postMessage("ok: block16");
+            wg.workletPort.postMessage("ok: block16");
         }
         if (wg.fillBuffer) {
             wg.fillBuffer(output);
