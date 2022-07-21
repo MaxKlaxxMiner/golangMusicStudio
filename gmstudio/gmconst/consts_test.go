@@ -38,4 +38,8 @@ func TestConsts(t *testing.T) {
 	if uint64(VolumeLimit) > 1<<(SampleBits-1)-1 {
 		t.Errorf("VolumeLimit out of range")
 	}
+
+	if WorkletSampleCount != 128 {
+		t.Errorf("WorkletSampleCount must be 128")
+	}
 }

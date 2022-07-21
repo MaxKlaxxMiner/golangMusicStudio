@@ -8,3 +8,5 @@ const AaBitsHQ = 16      // 16 bits for high quality anti aliasing = 65536 subsa
 
 const Volume100 int32 = 1 << (DynamicBits - 1)
 const VolumeLimit int32 = 1<<(SampleBits-1) - 1
+
+const WorkletSampleCount = 128 // default Audio-Worklet Sample-Buffersize
