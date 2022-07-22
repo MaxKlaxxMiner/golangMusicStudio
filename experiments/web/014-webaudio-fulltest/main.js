@@ -21,6 +21,8 @@ window.wg = {
     workletGoError: "",
     workletGoWasm: null,
     workletGoReady: false,
+
+    workletWatInit: false,
 }
 
 const version = Date.now();
@@ -128,6 +130,10 @@ function initWorkletGo() {
     }).catch(r => {
         wg.workletGoError = loadWasm + " - " + r.toString();
     }));
+}
+
+function initWorkletWat(){
+    wg.workletWatInit = true;
 }
 
 function workletSendMessage(msg) {
@@ -283,14 +289,28 @@ function updateTabWorkletGo() {
 
 }
 
+function updateTabWorkletWat(){
+    let exInfo = "";
+    if (wg.workletWatWasm != null) {
+        exInfo = " (wasm: " + (wg.workletWatWasm.length / 1024.0).toFixed(2) + " kByte loaded)";
+    }
+
+    if (!wg.workletWatInit) {
+        updateTab("status_workletWat", "", "not initialized");
+        return;
+    }
+}
+
 setInterval(() => {
     updateTab("status_main.js", "ok", "ok.");
     updateTabMainGo();
     updateTabAudioContext();
     updateTabAudioWorklet();
     updateTabWorkletGo();
+    updateTabWorkletWat();
 }, 10);
 
 initUserEvents();
 initMainGo();
 initWorkletGo();
+initWorkletWat();

@@ -23,7 +23,7 @@ func main() {
 			return nil
 		}
 		bufLen := args[0].Get("length").Int()
-		if bufLen*4 != gmconst.WorkletSampleCount || args[1].Get("length").Int() != bufLen {
+		if bufLen != gmconst.WorkletSampleCount*4 || args[1].Get("length").Int() != bufLen {
 			return nil // invalid buffer sizes?
 		}
 
