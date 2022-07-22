@@ -704,6 +704,10 @@ globalThis.wg = {
     workletPort: null,
     workletGoReady: false,
     workletGoFillBuffer: null,
+    workletWat: null,
+    workletWatMem: null,
+    workletWatMemSamples: null,
+    workletWatReady: false,
 };
 
 let go = null;
@@ -718,6 +722,20 @@ function recMessage(event) {
             const module = new WebAssembly.Module(event.data.val);
             const instance = new WebAssembly.Instance(module, go.importObject);
             go.run(instance);
+            break;
+        }
+        case "watWasm": {
+            const importObject = {};
+            const module = new WebAssembly.Module(event.data.val);
+            const instance = new WebAssembly.Instance(module, importObject);
+            wg.workletWat = instance.exports;
+            wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
+            wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
+            if (wg.workletWat.active() === 1) {
+                wg.workletWatReady = true;
+                wg.workletPort.postMessage("ok: watWasmReady");
+            }
+            console.log(wg.workletWatMemSamples);
             break;
         }
         case "tone": {

@@ -23,6 +23,13 @@ window.wg = {
     workletGoReady: false,
 
     workletWatInit: false,
+    workletWatError: "",
+    workletWatWasm: null,
+    workletWatReady: false,
+    workletWat: null,
+    workletWatMem: null,
+    workletWatMemSamples: null,
+    workletWatMemInts: null,
 }
 
 const version = Date.now();
@@ -132,8 +139,28 @@ function initWorkletGo() {
     }));
 }
 
-function initWorkletWat(){
+function initWorkletWat() {
     wg.workletWatInit = true;
+
+    const loadWasm = "wat.wasm?" + version;
+    fetch(loadWasm).then(r => r.arrayBuffer().then(buffer => {
+        if (r.status !== 200) {
+            wg.workletWatError = loadWasm + " - " + r.statusText;
+        }
+        wg.workletWatWasm = new Uint8Array(buffer);
+
+        workletSendMessage({t: "watWasm", val: wg.workletWatWasm})
+
+        const importObject = {};
+        const module = new WebAssembly.Module(wg.workletWatWasm);
+        const instance = new WebAssembly.Instance(module, importObject);
+        wg.workletWat = instance.exports;
+        wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
+        wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
+        wg.workletWatMemInts = new Int32Array(wg.workletWat.mem.buffer);
+    }).catch(r => {
+        wg.workletWatError = loadWasm + " - " + r.toString();
+    }));
 }
 
 function workletSendMessage(msg) {
@@ -164,6 +191,10 @@ function workletReceiveMessage(msg) {
         }
         case "ok: goWasmReady": {
             wg.workletGoReady = true;
+            break;
+        }
+        case "ok: watWasmReady": {
+            wg.workletWatReady = true;
             break;
         }
     }
@@ -286,18 +317,38 @@ function updateTabWorkletGo() {
     } else {
         updateTab("status_workletGo", "", "not ready..." + exInfo);
     }
-
 }
 
-function updateTabWorkletWat(){
+function updateTabWorkletWat() {
     let exInfo = "";
     if (wg.workletWatWasm != null) {
         exInfo = " (wasm: " + (wg.workletWatWasm.length / 1024.0).toFixed(2) + " kByte loaded)";
     }
 
+    if (wg.workletWatError) {
+        updateTab("status_workletWat", "error", "error: " + wg.workletWatError);
+        return;
+    }
+
     if (!wg.workletWatInit) {
         updateTab("status_workletWat", "", "not initialized");
         return;
+    }
+
+    if (!wg.workletInit) {
+        updateTab("status_workletWat", "info", "wait for audioWorklet" + exInfo);
+        return;
+    }
+
+    if (wg.workletWatWasm == null) {
+        updateTab("status_workletWat", "", "load wasm...");
+        return;
+    }
+
+    if (wg.workletWatReady) {
+        updateTab("status_workletWat", "ok", "ok." + exInfo);
+    } else {
+        updateTab("status_workletWat", "", "not ready..." + exInfo);
     }
 }
 
