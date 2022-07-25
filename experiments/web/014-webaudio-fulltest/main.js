@@ -57,6 +57,11 @@ function initUserEvents() {
         wg.userInput = true;
         initAudio();
     }
+
+    document.getElementById("btn_workletJs").addEventListener("touchstart",()=>{ toneWorkletJs(true); }, false);
+    document.getElementById("btn_workletJs").addEventListener("touchend",()=>{ toneWorkletJs(false); }, false);
+    document.getElementById("btn_workletGo").addEventListener("touchstart",()=>{ toneWorkletGo(true); }, false);
+    document.getElementById("btn_workletGo").addEventListener("touchend",()=>{ toneWorkletGo(false); }, false);
 }
 
 function initMainGo() {
@@ -352,16 +357,18 @@ function updateTabWorkletWat() {
     }
 }
 
-setInterval(() => {
-    updateTab("status_main.js", "ok", "ok.");
-    updateTabMainGo();
-    updateTabAudioContext();
-    updateTabAudioWorklet();
-    updateTabWorkletGo();
-    updateTabWorkletWat();
-}, 10);
+window.addEventListener('load', (event) => {
+    setInterval(() => {
+        updateTab("status_main.js", "ok", "ok.");
+        updateTabMainGo();
+        updateTabAudioContext();
+        updateTabAudioWorklet();
+        updateTabWorkletGo();
+        updateTabWorkletWat();
+    }, 10);
 
-initUserEvents();
-initMainGo();
-initWorkletGo();
-initWorkletWat();
+    initUserEvents();
+    initMainGo();
+    initWorkletGo();
+    initWorkletWat();
+});
