@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dummy</title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            background: #111;
+            color: #eee;
+            font-family: Consolas, monospace;
+        }
+
+        div {
+            padding: 55px;
+        }
+
+        h1 > span {
+            color: #0080ff;
+        }
+
+        button {
+            width: 144px;
+            height: 55px;
+            background: #888;
+        }
+
+        button:hover {
+            background: #ccc;
+            cursor: pointer;
+        }
+    </style>
+    <script src="wasm_exec.js"></script>
+    <script src="main.js"></script>
+</head>
+<body>
+<div>
+    <h1>015-minisynth <span>^_^</span></h1>
+    <button onmousedown="toneStart(60)" onmouseup="toneStop(60)">C4</button>
+</div>
+</body>
+</html>
