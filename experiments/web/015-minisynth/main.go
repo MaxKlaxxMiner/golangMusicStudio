@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"syscall/js"
+)
 
 func main() {
-	fmt.Println("hello world!")
+	wg := js.Global().Get("wg")
+	wg.Set("mainGoReady", true)
 }

@@ -16,6 +16,7 @@ window.wg = {
     workletStarted: false,
     workletBlockCount16: 0,
     workletReady: false,
+    workletWatReady: false,
     workletMessageTodo: [],
 }
 
@@ -176,10 +177,6 @@ function workletReceiveMessage(msg) {
             workletSendMessage(null);
             break;
         }
-        case "ok: goWasmReady": {
-            wg.workletGoReady = true;
-            break;
-        }
         case "ok: watWasmReady": {
             wg.workletWatReady = true;
             break;
@@ -201,9 +198,41 @@ function toneStart(midiCode) {
 function toneStop(midiCode) {
 }
 
+function updateStat() {
+    const msg = txt => {
+        const el = document.getElementById("stat");
+        if (el && el.innerText !== txt) el.innerText = txt;
+    };
+
+    if (!wg.userInput) return msg("wait for user input...");
+
+    if (!wg.mainGoInit) return msg("initMainGo() not started");
+    if (wg.mainGoError) return msg("mainGoError: " + wg.mainGoError);
+    if (!wg.mainGoReady) return msg("mainGo: not ready");
+
+    if (!wg.audioInit) return msg("initAudio() not started");
+    if (wg.audioError) return msg("audioError: " + wg.audioError);
+    if (wg.audioContext === null) return msg("audioContext == null");
+
+    if (!wg.workletInit) return msg("workletInit not reached");
+    if (wg.workletError) return msg("workletError: " + wg.workletError);
+    if (wg.workletNode === null) return msg("workletNode == null");
+    if (!wg.workletLoaded) return msg("load worklet module...");
+    if (!wg.workletStarted) return msg("worklet not started");
+    if (!wg.workletReady) return msg("worklet not ready");
+
+    //     workletBlockCount16: 0,
+    //     workletWatReady: false,
+
+
+    msg("run: " + wg.audioContext.currentTime.toFixed(1) + " s - " + wg.workletBlockCount16 + " blocks - " + (wg.workletBlockCount16 * 16 * 128 / 1000000).toFixed(2) + "M samples");
+}
+
 window.addEventListener('load', (event) => {
+    setInterval(() => {
+        updateStat();
+    }, 10);
     initUserEvents();
     initMainGo();
-    // initWorkletGo();
     // initWorkletWat();
 });
