@@ -8,10 +8,10 @@ globalThis.wg = {
     fillBuffer: null,
     bufCounter: 0,
     workletPort: null,
-    // workletWat: null,
-    // workletWatMem: null,
-    // workletWatMemSamples: null,
-    // workletWatReady: false,
+    workletWat: null,
+    workletWatMem: null,
+    workletWatMemSamples: null,
+    workletWatReady: false,
 };
 
 console.log("worklet: start processor");
@@ -19,35 +19,40 @@ console.log("worklet: start processor");
 function recMessage(event) {
     console.log("data:", event.data);
     switch (event.data.t) {
-        // case "watWasm": {
-        //     const importObject = {};
-        //     const module = new WebAssembly.Module(event.data.val);
-        //     const instance = new WebAssembly.Instance(module, importObject);
-        //     wg.workletWat = instance.exports;
-        //     wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
-        //     wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
-        //     if (wg.workletWat.active() === 1) {
-        //         wg.workletWatReady = true;
-        //         wg.workletPort.postMessage("ok: watWasmReady");
-        //     }
-        //     console.log(wg.workletWatMemSamples);
-        //     break;
-        // }
-        // case "tone": {
-        //     if (event.data.val) {
-        //         wg.fillBuffer = output => {
-        //             output.forEach(channel => {
-        //                 for (let i = 0; i < channel.length; i++) {
-        //                     channel[i] = Math.random() * 2 - 1
-        //                     channel[i] *= 0.1;
-        //                 }
-        //             });
-        //         }
-        //     } else {
-        //         wg.fillBuffer = null;
-        //     }
-        //     break;
-        // }
+        case "watWasm": {
+            const importObject = {};
+            const module = new WebAssembly.Module(event.data.val);
+            const instance = new WebAssembly.Instance(module, importObject);
+            wg.workletWat = instance.exports;
+            wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
+            wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
+            const version = wg.workletWat.version();
+            if (version < 10001) {
+                console.log("invalid worklet.wasm version: " + version);
+                break;
+            }
+            console.log("worklet: run wat version: " + version);
+            wg.workletWatReady = true;
+            wg.workletPort.postMessage("ok: watWasmReady");
+            break;
+        }
+        case "toneStart": {
+            const code = event.data.val;
+            wg.fillBuffer = output => {
+                output.forEach(channel => {
+                    for (let i = 0; i < channel.length; i++) {
+                        channel[i] = Math.random() * 2 - 1
+                        channel[i] *= 0.1;
+                    }
+                });
+            };
+            break;
+        }
+        case "toneEnd": {
+            const code = event.data.val;
+            wg.fillBuffer = null;
+            break;
+        }
         // case "toneGo": {
         //     if (event.data.val) {
         //         wg.fillBuffer = output => {
@@ -84,7 +89,6 @@ class WatProcessor extends AudioWorkletProcessor {
         } else {
             output.forEach(channel => {
                 for (let i = 0; i < channel.length; i++) {
-                    //channel[i] = i / 128 / 32;
                     channel[i] = 0;
                 }
             })

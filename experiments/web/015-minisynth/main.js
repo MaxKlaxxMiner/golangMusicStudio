@@ -16,8 +16,12 @@ window.wg = {
     workletStarted: false,
     workletBlockCount16: 0,
     workletReady: false,
-    workletWatReady: false,
     workletMessageTodo: [],
+
+    workletWatInit: false,
+    workletWatError: "",
+    workletWatWasm: null,
+    workletWatReady: false,
 }
 
 const version = Date.now();
@@ -111,45 +115,21 @@ function initAudio() {
     })
 }
 
-// function initWorkletGo() {
-//     wg.workletGoInit = true;
-//
-//     const loadWasm = "worklet.wasm?" + version;
-//     fetch(loadWasm).then(r => r.arrayBuffer().then(buffer => {
-//         if (r.status !== 200) {
-//             wg.workletGoError = loadWasm + " - " + r.statusText;
-//         }
-//         wg.workletGoWasm = new Uint8Array(buffer);
-//
-//         workletSendMessage({t: "goWasm", val: wg.workletGoWasm})
-//     }).catch(r => {
-//         wg.workletGoError = loadWasm + " - " + r.toString();
-//     }));
-// }
+function initWorkletWat() {
+    wg.workletWatInit = true;
 
-// function initWorkletWat() {
-//     wg.workletWatInit = true;
-//
-//     const loadWasm = "wat.wasm?" + version;
-//     fetch(loadWasm).then(r => r.arrayBuffer().then(buffer => {
-//         if (r.status !== 200) {
-//             wg.workletWatError = loadWasm + " - " + r.statusText;
-//         }
-//         wg.workletWatWasm = new Uint8Array(buffer);
-//
-//         workletSendMessage({t: "watWasm", val: wg.workletWatWasm})
-//
-//         const importObject = {};
-//         const module = new WebAssembly.Module(wg.workletWatWasm);
-//         const instance = new WebAssembly.Instance(module, importObject);
-//         wg.workletWat = instance.exports;
-//         wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
-//         wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
-//         wg.workletWatMemInts = new Int32Array(wg.workletWat.mem.buffer);
-//     }).catch(r => {
-//         wg.workletWatError = loadWasm + " - " + r.toString();
-//     }));
-// }
+    const loadWasm = "worklet.wasm?" + version;
+    fetch(loadWasm).then(r => r.arrayBuffer().then(buffer => {
+        if (r.status !== 200) {
+            wg.workletWatError = loadWasm + " - " + r.statusText;
+        }
+        wg.workletWatWasm = new Uint8Array(buffer);
+
+        workletSendMessage({t: "watWasm", val: wg.workletWatWasm})
+    }).catch(r => {
+        wg.workletWatError = loadWasm + " - " + r.toString();
+    }));
+}
 
 function workletSendMessage(msg) {
     if (!wg.workletReady) {
@@ -184,18 +164,12 @@ function workletReceiveMessage(msg) {
     }
 }
 
-// function toneWorkletJs(active) {
-//     workletSendMessage({t: "tone", val: active});
-// }
-//
-// function toneWorkletGo(active) {
-//     workletSendMessage({t: "toneGo", val: active});
-// }
-
 function toneStart(midiCode) {
+    workletSendMessage({t: "toneStart", val: midiCode})
 }
 
-function toneStop(midiCode) {
+function toneEnd(midiCode) {
+    workletSendMessage({t: "toneEnd", val: midiCode})
 }
 
 function updateStat() {
@@ -221,9 +195,10 @@ function updateStat() {
     if (!wg.workletStarted) return msg("worklet not started");
     if (!wg.workletReady) return msg("worklet not ready");
 
-    //     workletBlockCount16: 0,
-    //     workletWatReady: false,
-
+    if (!wg.workletWatInit) return msg("initWorkletWat() not started");
+    if (wg.workletWatError) return msg("workletWatError: " + wg.workletWatError);
+    if (wg.workletWatWasm === null) return msg("load worklet.wasm...");
+    if (!wg.workletWatReady) return msg("worklet.wasm not ready");
 
     msg("run: " + wg.audioContext.currentTime.toFixed(1) + " s - " + wg.workletBlockCount16 + " blocks - " + (wg.workletBlockCount16 * 16 * 128 / 1000000).toFixed(2) + "M samples");
 }
@@ -234,5 +209,5 @@ window.addEventListener('load', (event) => {
     }, 10);
     initUserEvents();
     initMainGo();
-    // initWorkletWat();
+    initWorkletWat();
 });
