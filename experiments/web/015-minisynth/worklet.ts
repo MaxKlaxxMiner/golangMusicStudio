@@ -1,5 +1,7 @@
 console.log("worklet: init go wasm");
+
 "use strict";
+
 const wg = {
     fillBuffer: null,
     bufCounter: 0,
@@ -9,7 +11,9 @@ const wg = {
     workletWatMemSamples: null,
     workletWatReady: false,
 };
+
 console.log("worklet: start processor");
+
 function recMessage(event) {
     console.log("data:", event.data);
     switch (event.data.t) {
@@ -36,9 +40,10 @@ function recMessage(event) {
                 //             const bufferLeft = new Uint8Array(output[0].buffer);
                 //             const bufferRight = new Uint8Array(output[1].buffer);
                 //             wg.workletGoFillBuffer(bufferLeft, bufferRight);
+
                 output.forEach(channel => {
                     for (let i = 0; i < channel.length; i++) {
-                        channel[i] = Math.random() * 2 - 1;
+                        channel[i] = Math.random() * 2 - 1
                         channel[i] *= 0.1;
                     }
                 });
@@ -52,6 +57,14 @@ function recMessage(event) {
         }
     }
 }
+
+declare abstract class AudioWorkletProcessor {
+    port: MessagePort;
+    // noinspection JSUnusedGlobalSymbols
+    abstract process(inputs, outputs, parameters): boolean;
+}
+declare function registerProcessor(name: string, processorCtor: any);
+
 class WatProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
@@ -59,8 +72,9 @@ class WatProcessor extends AudioWorkletProcessor {
         wg.workletPort = this.port;
         wg.workletPort.postMessage("ok: start");
     }
+
     process(inputs, outputs, parameters) {
-        const output = outputs[0];
+        const output = outputs[0]
         wg.bufCounter++;
         if (wg.bufCounter >= 16) {
             wg.bufCounter -= 16;
@@ -68,17 +82,19 @@ class WatProcessor extends AudioWorkletProcessor {
         }
         if (wg.fillBuffer) {
             wg.fillBuffer(output);
-        }
-        else {
+        } else {
             output.forEach(channel => {
                 for (let i = 0; i < channel.length; i++) {
                     channel[i] = 0;
                 }
-            });
+            })
         }
-        return true;
+        return true
     }
 }
+
 console.log("worklet: register");
+
 registerProcessor("worklet", WatProcessor);
+
 console.log("worklet: ok.");

@@ -24,6 +24,7 @@
             width: 144px;
             height: 55px;
             background: #888;
+            touch-action: manipulation;
         }
 
         button:hover {
@@ -38,7 +39,8 @@
 <div>
     <h1>015-minisynth <span>^_^</span></h1>
     <span id="stat">...</span><br /><br />
-    <button onmousedown="toneStart(60)" onmouseup="toneEnd(60)">C4</button>
+    <button class="note_button" data-midicode="60">C4</button>
+    <button class="note_button" data-midicode="69">A4</button>
 </div>
 </body>
 </html>
