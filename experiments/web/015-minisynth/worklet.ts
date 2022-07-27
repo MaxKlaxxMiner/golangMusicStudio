@@ -3,14 +3,37 @@ console.log("worklet: init go wasm");
 "use strict";
 
 const wg = {
-    fillBuffer: null,
+    fillBuffer: <(output: Float32Array[]) => void>null,
     bufCounter: 0,
-    workletPort: null,
-    workletWat: null,
-    workletWatMem: null,
-    workletWatMemSamples: null,
+    workletPort: <MessagePort>null,
+    workletWat: <WorkletWat>null,
+    workletWatMem: <Uint8Array>null,
+    workletWatSamplesLeft: <Float32Array>null,
+    workletWatSamplesRight: <Float32Array>null,
     workletWatReady: false,
 };
+
+const watMinVersion = 10002;
+
+declare class WorkletWat {
+    // --- 10002 ---
+    // noise(buf *int, sampleCount uint, incr uint, ofs uint) uint
+    noise(bufPtr: number, sampleCount: number, incr: number, ofs: number): number
+
+    // squareLQ(buf *int, sampleCount uint, incr uint, ofs uint) uint
+    squareLQ(bufPtr: number, sampleCount: number, incr: number, ofs: number): number
+
+    // squareHQ(buf *int, sampleCount uint, incr uint, ofs uint) uint
+    squareHQ(bufPtr: number, sampleCount: number, incr: number, ofs: number): number
+
+    // convertIntSamplesToFloat32(floats *float, ints *int, sampleCount uint)
+    convertIntSamplesToFloat32(floatsPtr: number, intsPtr: number, sampleCount: number): void
+
+    // --- 10001 ---
+    version(): number
+
+    mem: WebAssembly.Memory
+}
 
 console.log("worklet: start processor");
 
@@ -21,11 +44,12 @@ function recMessage(event) {
             const importObject = {};
             const module = new WebAssembly.Module(event.data.val);
             const instance = new WebAssembly.Instance(module, importObject);
-            wg.workletWat = instance.exports;
+            wg.workletWat = <any>instance.exports;
             wg.workletWatMem = new Uint8Array(wg.workletWat.mem.buffer);
-            wg.workletWatMemSamples = new Float32Array(wg.workletWat.mem.buffer);
+            wg.workletWatSamplesLeft = new Float32Array(wg.workletWat.mem.buffer, 0, 128);
+            wg.workletWatSamplesRight = new Float32Array(wg.workletWat.mem.buffer, 512, 128);
             const version = wg.workletWat.version();
-            if (version < 10001) {
+            if (version < watMinVersion) {
                 console.log("invalid worklet.wasm version: " + version);
                 break;
             }
@@ -35,19 +59,36 @@ function recMessage(event) {
             break;
         }
         case "toneStart": {
-            //const code = event.data.val;
-            wg.fillBuffer = output => {
-                //             const bufferLeft = new Uint8Array(output[0].buffer);
-                //             const bufferRight = new Uint8Array(output[1].buffer);
-                //             wg.workletGoFillBuffer(bufferLeft, bufferRight);
+            const code = event.data.val;
+            if (wg.workletWatReady) {
+                let ofs = 0;
+                const wat = wg.workletWat;
+                wg.fillBuffer = output => {
+                    wat.noise(1024, 128, 123456789, ofs + code - 60); // C4 = 60 = mono noise
+                    ofs = wat.noise(1536, 128, 123456789, ofs);
 
-                output.forEach(channel => {
-                    for (let i = 0; i < channel.length; i++) {
-                        channel[i] = Math.random() * 2 - 1
-                        channel[i] *= 0.1;
-                    }
-                });
-            };
+                    wat.convertIntSamplesToFloat32(0, 1024, 128);   // convert int -> float32 - left side
+                    wat.convertIntSamplesToFloat32(512, 1536, 128); // convert int -> float32 - right side
+
+                    output[0].set(wg.workletWatSamplesLeft);        // copy left-samples to output-buffer
+                    output[1].set(wg.workletWatSamplesRight);       // copy right-samples to output-buffer
+
+                    output.forEach(channel => {
+                        for (let i = 0; i < channel.length; i++) {
+                            channel[i] *= 0.1; // volume = 10%
+                        }
+                    });
+                };
+            } else {
+                wg.fillBuffer = output => {
+                    output.forEach(channel => {
+                        for (let i = 0; i < channel.length; i++) {
+                            channel[i] = Math.random() * 2 - 1
+                            channel[i] *= 0.1;
+                        }
+                    });
+                };
+            }
             break;
         }
         case "toneEnd": {
@@ -60,9 +101,11 @@ function recMessage(event) {
 
 declare abstract class AudioWorkletProcessor {
     port: MessagePort;
+
     // noinspection JSUnusedGlobalSymbols
     abstract process(inputs, outputs, parameters): boolean;
 }
+
 declare function registerProcessor(name: string, processorCtor: any);
 
 class WatProcessor extends AudioWorkletProcessor {
