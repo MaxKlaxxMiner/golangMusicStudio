@@ -4,7 +4,7 @@
 
 ;; version() int
 (func (export "version") (result i32)
-  i32.const 10003
+  i32.const 10004
 )
 
 ;; noise(buf *int, sampleCount uint, incr uint, ofs uint) uint
@@ -185,6 +185,26 @@
            )
           (i64.const 23)
         )
+      )
+    )
+
+    (local.tee $i (i32.add (local.get $i) (i32.const 4)))                      ;; i += 4
+    (br_if $loop (i32.lt_s (; $i ;) (local.get $sampleCount)))                 ;; if (i < $sampleCount * 4) loop
+  end
+)
+
+;; mix(buf *int, src1 *int, src2 *int, sampleCount uint)
+(func (export "mix") (param $buf i32) (param $src1 i32) (param $src2 i32) (param $sampleCount i32)
+  (local $i i32)                                                               ;; int i = 0;
+  (local.set $sampleCount (i32.mul (local.get $sampleCount) (i32.const 4)))    ;; sampleCount *= 4
+
+  loop $loop
+    ;; buf[i] = src1[i] + src2[i]
+    (i32.store
+      (i32.add (local.get $buf) (local.get $i))                                ;; buf[i]
+      (i32.add                                                                 ;; src1[i] + src2[i]
+        (i32.load (i32.add (local.get $src1) (local.get $i)))                  ;; src1[i]
+        (i32.load (i32.add (local.get $src2) (local.get $i)))                  ;; src2[i]
       )
     )
 
