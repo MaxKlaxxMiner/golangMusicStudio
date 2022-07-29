@@ -45,37 +45,40 @@ function initUserEvents() {
         initAudio();
     };
     // --- note-buttons ---
-    const noteButtons = document.getElementsByClassName("note_button");
-    for (let i = 0; i < noteButtons.length; i++) {
-        const button = noteButtons[i];
-        console.log(button);
-        const code = parseInt(button.dataset.midicode);
-        if (code) {
-            let active = false;
-            const start = () => {
-                if (active)
-                    return;
-                toneStart(code);
-                active = true;
-            };
-            const end = () => {
-                if (!active)
-                    return;
-                toneEnd(code);
-                active = false;
-            };
-            button.addEventListener("mousedown", start);
-            button.addEventListener("mouseenter", (ev) => {
-                if (ev.buttons === 1)
-                    start();
-            });
-            button.addEventListener("touchstart", start);
-            button.addEventListener("mouseup", end);
-            button.addEventListener("mouseout", end);
-            button.addEventListener("dragend", end);
-            button.addEventListener("touchend", end);
+    const addNoteButtons = (noteButtons, hq) => {
+        for (let i = 0; i < noteButtons.length; i++) {
+            const button = noteButtons[i];
+            console.log(button);
+            const code = parseInt(button.dataset.midicode);
+            if (code) {
+                let active = false;
+                const start = () => {
+                    if (active)
+                        return;
+                    toneStart(code, hq);
+                    active = true;
+                };
+                const end = () => {
+                    if (!active)
+                        return;
+                    toneEnd(code);
+                    active = false;
+                };
+                button.addEventListener("mousedown", start);
+                button.addEventListener("mouseenter", (ev) => {
+                    if (ev.buttons === 1)
+                        start();
+                });
+                button.addEventListener("touchstart", start);
+                button.addEventListener("mouseup", end);
+                button.addEventListener("mouseout", end);
+                button.addEventListener("dragend", end);
+                button.addEventListener("touchend", end);
+            }
         }
-    }
+    };
+    addNoteButtons(document.getElementsByClassName("note_button"), false);
+    addNoteButtons(document.getElementsByClassName("note_buttonh"), true);
 }
 function initMainGo() {
     try {
@@ -188,8 +191,8 @@ function workletReceiveMessage(msg) {
         }
     }
 }
-function toneStart(midiCode) {
-    workletSendMessage({ t: "toneStart", val: midiCode });
+function toneStart(midiCode, hq) {
+    workletSendMessage({ t: "toneStart", val: midiCode, hq: hq });
 }
 function toneEnd(midiCode) {
     workletSendMessage({ t: "toneEnd", val: midiCode });

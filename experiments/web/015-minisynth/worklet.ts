@@ -61,11 +61,15 @@ function recMessage(event) {
         case "toneStart": {
             const code = event.data.val;
             if (wg.workletWatReady) {
-                let ofs = 0;
+                let ofsL = 0;
+                let ofsR = 0;
+                const incrL = (4294967296 / (44100 / (440 * Math.pow(2, (code - 69 + 0.01) / 12))) + 0.5) | 0;
+                const incrR = (4294967296 / (44100 / (440 * Math.pow(2, (code - 69 - 0.01) / 12))) + 0.5) | 0;
                 const wat = wg.workletWat;
+                const func = event.data.hq ? wat.squareHQ : wat.squareLQ;
                 wg.fillBuffer = output => {
-                    wat.noise(1024, 128, 123456789, ofs + code - 60); // C4 = 60 = mono noise
-                    ofs = wat.noise(1536, 128, 123456789, ofs);
+                    ofsL = func(1024, 128, incrL, ofsL);
+                    ofsR = func(1536, 128, incrR, ofsR);
 
                     wat.convertIntSamplesToFloat32(0, 1024, 128);   // convert int -> float32 - left side
                     wat.convertIntSamplesToFloat32(512, 1536, 128); // convert int -> float32 - right side

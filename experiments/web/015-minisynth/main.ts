@@ -52,36 +52,40 @@ function initUserEvents() {
     }
 
     // --- note-buttons ---
-    const noteButtons = document.getElementsByClassName("note_button");
-    for (let i = 0; i < noteButtons.length; i++) {
-        const button = <HTMLElement>noteButtons[i];
-        console.log(button);
-        const code = parseInt(button.dataset.midicode);
-        if (code) {
-            let active = false;
-            const start = () => {
-                if (active) return;
-                toneStart(code);
-                active = true;
-            };
-            const end = () => {
-                if (!active) return;
-                toneEnd(code);
-                active = false;
+    const addNoteButtons = (noteButtons: HTMLCollectionOf<Element>, hq: boolean) => {
+        for (let i = 0; i < noteButtons.length; i++) {
+            const button = <HTMLElement>noteButtons[i];
+            console.log(button);
+            const code = parseInt(button.dataset.midicode);
+            if (code) {
+                let active = false;
+                const start = () => {
+                    if (active) return;
+                    toneStart(code, hq);
+                    active = true;
+                };
+                const end = () => {
+                    if (!active) return;
+                    toneEnd(code);
+                    active = false;
+                }
+
+                button.addEventListener("mousedown", start);
+                button.addEventListener("mouseenter", (ev) => {
+                    if (ev.buttons === 1) start()
+                });
+                button.addEventListener("touchstart", start);
+
+                button.addEventListener("mouseup", end);
+                button.addEventListener("mouseout", end);
+                button.addEventListener("dragend", end);
+                button.addEventListener("touchend", end);
             }
-
-            button.addEventListener("mousedown", start);
-            button.addEventListener("mouseenter", (ev) => {
-                if (ev.buttons === 1) start()
-            });
-            button.addEventListener("touchstart", start);
-
-            button.addEventListener("mouseup", end);
-            button.addEventListener("mouseout", end);
-            button.addEventListener("dragend", end);
-            button.addEventListener("touchend", end);
         }
-    }
+    };
+
+    addNoteButtons(document.getElementsByClassName("note_button"), false);
+    addNoteButtons(document.getElementsByClassName("note_buttonh"), true);
 }
 
 declare class Go {
@@ -204,11 +208,11 @@ function workletReceiveMessage(msg) {
     }
 }
 
-function toneStart(midiCode) {
-    workletSendMessage({t: "toneStart", val: midiCode})
+function toneStart(midiCode: number, hq: boolean) {
+    workletSendMessage({t: "toneStart", val: midiCode, hq: hq})
 }
 
-function toneEnd(midiCode) {
+function toneEnd(midiCode: number) {
     workletSendMessage({t: "toneEnd", val: midiCode})
 }
 
