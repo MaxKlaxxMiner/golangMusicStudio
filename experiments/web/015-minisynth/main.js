@@ -18,6 +18,7 @@ const wg = {
     workletWatError: "",
     workletWatWasm: null,
     workletWatReady: false,
+    workletWatVersion: 0,
 };
 window["wg"] = wg;
 const version = Date.now();
@@ -48,7 +49,6 @@ function initUserEvents() {
     const addNoteButtons = (noteButtons, hq) => {
         for (let i = 0; i < noteButtons.length; i++) {
             const button = noteButtons[i];
-            console.log(button);
             const code = parseInt(button.dataset.midicode);
             if (code) {
                 let active = false;
@@ -185,8 +185,13 @@ function workletReceiveMessage(msg) {
             workletSendMessage(null);
             break;
         }
-        case "ok: watWasmReady": {
-            wg.workletWatReady = true;
+        default: {
+            if (msg.data.indexOf("ok: watWasmReady ") === 0) {
+                wg.workletWatReady = true;
+                wg.workletWatVersion = msg.data.substr(17);
+                break;
+            }
+            console.log("unknown message: \"" + msg.data + "\"");
             break;
         }
     }
@@ -237,7 +242,7 @@ function updateStat() {
         return msg("load worklet.wasm...");
     if (!wg.workletWatReady)
         return msg("worklet.wasm not ready");
-    msg("run: " + wg.audioContext.currentTime.toFixed(1) + " s - " + wg.workletBlockCount16 + " blocks - " + (wg.workletBlockCount16 * 16 * 128 / 1000000).toFixed(2) + "M samples");
+    msg("run: " + wg.audioContext.currentTime.toFixed(1) + " s - " + wg.workletBlockCount16 + " blocks - " + (wg.workletBlockCount16 * 16 * 128 / 1000000).toFixed(2) + "M samples (wat version: " + (wg.workletWatVersion / 10000).toFixed(4) + ")");
 }
 window.addEventListener("load", () => {
     setInterval(() => {

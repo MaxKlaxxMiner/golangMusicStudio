@@ -13,9 +13,13 @@ const wg = {
     workletWatReady: false,
 };
 
-const watMinVersion = 10002;
+const watMinVersion = 10003;
 
 declare class WorkletWat {
+    // --- 10003 ---
+    // volumeUpdate(buf *int, sampleCount uint, vol int)
+    volumeUpdate(bufPtr: number, sampleCount: number, vol: number): void
+
     // --- 10002 ---
     // noise(buf *int, sampleCount uint, incr uint, ofs uint) uint
     noise(bufPtr: number, sampleCount: number, incr: number, ofs: number): number
@@ -55,7 +59,7 @@ function recMessage(event) {
             }
             console.log("worklet: run wat version: " + version);
             wg.workletWatReady = true;
-            wg.workletPort.postMessage("ok: watWasmReady");
+            wg.workletPort.postMessage("ok: watWasmReady " + version);
             break;
         }
         case "toneStart": {
@@ -71,17 +75,14 @@ function recMessage(event) {
                     ofsL = func(1024, 128, incrL, ofsL);
                     ofsR = func(1536, 128, incrR, ofsR);
 
+                    wat.volumeUpdate(1024, 128, 0 | (8388608 * 0.1));   // 10% Volume - left side
+                    wat.volumeUpdate(1536, 128, 0 | (8388608 * 0.1));   // 10% Volume - right side
+
                     wat.convertIntSamplesToFloat32(0, 1024, 128);   // convert int -> float32 - left side
                     wat.convertIntSamplesToFloat32(512, 1536, 128); // convert int -> float32 - right side
 
                     output[0].set(wg.workletWatSamplesLeft);        // copy left-samples to output-buffer
                     output[1].set(wg.workletWatSamplesRight);       // copy right-samples to output-buffer
-
-                    output.forEach(channel => {
-                        for (let i = 0; i < channel.length; i++) {
-                            channel[i] *= 0.1; // volume = 10%
-                        }
-                    });
                 };
             } else {
                 wg.fillBuffer = output => {

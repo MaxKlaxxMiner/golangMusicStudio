@@ -4,7 +4,7 @@
 
 ;; version() int
 (func (export "version") (result i32)
-  i32.const 10002
+  i32.const 10003
 )
 
 ;; noise(buf *int, sampleCount uint, incr uint, ofs uint) uint
@@ -158,6 +158,34 @@
     (f32.store
       (i32.add (local.get $floats) (local.get $i))                             ;; floats[i]
       (f32.mul (f32.convert_i32_s (i32.load (i32.add (local.get $ints) (local.get $i)))) (local.get $mul)) ;; float32(ints[i]) * $mul
+    )
+
+    (local.tee $i (i32.add (local.get $i) (i32.const 4)))                      ;; i += 4
+    (br_if $loop (i32.lt_s (; $i ;) (local.get $sampleCount)))                 ;; if (i < $sampleCount * 4) loop
+  end
+)
+
+;; volumeUpdate(buf *int, sampleCount uint, vol int)
+(func (export "volumeUpdate") (param $buf i32) (param $sampleCount i32) (param $vol i32)
+  (local $i i32)                                                               ;; int i = 0;
+  (local $v i64)
+  (local.set $sampleCount (i32.mul (local.get $sampleCount) (i32.const 4)))    ;; sampleCount *= 4
+  (local.set $v (i64.extend_i32_s (local.get $vol)))
+
+  loop $loop
+    ;; buf[i] = int32((int64(buf[i]) * int64(vol)) >> (gmconst.DynamicBits - 1))
+    ;; buf[i] = int32((int64(buf[i]) * int64(vol)) >> 23)
+    (i32.store
+      (i32.add (local.get $buf) (local.get $i))                                ;; buf[i]
+      (i32.wrap_i64                                                            ;; int32()
+        (i64.shr_s
+          (i64.mul
+            (i64.extend_i32_s (i32.load (i32.add (local.get $buf) (local.get $i)))) ;; int64(buf[i])
+            (local.get $v)                                                          ;; int64(vol)
+           )
+          (i64.const 23)
+        )
+      )
     )
 
     (local.tee $i (i32.add (local.get $i) (i32.const 4)))                      ;; i += 4
