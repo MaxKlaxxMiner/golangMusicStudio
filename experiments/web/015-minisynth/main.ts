@@ -78,7 +78,7 @@ const keyTones = {
     Backslash: 54,
 };
 
-let baseOctave = 1;
+let baseOctave = 0;
 
 function initUserEvents() {
     onclick = () => {
@@ -295,7 +295,8 @@ function workletReceiveMessage(msg) {
 }
 
 function toneStart(midiCode: number, hq: boolean) {
-    workletSendMessage({t: "toneStart", val: midiCode, hq: hq})
+    const osc3 = document.getElementById("osc3") && (<HTMLInputElement>document.getElementById("osc3")).checked;
+    workletSendMessage({t: "toneStart", val: midiCode, hq: hq, osc3: osc3})
 }
 
 function toneEnd(midiCode: number) {
